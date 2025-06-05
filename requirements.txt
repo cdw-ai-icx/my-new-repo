@@ -1,0 +1,30 @@
+# Core LangChain ecosystem - LATEST
+langchain==0.3.25
+langchain-core==0.3.63
+langchain-community==0.3.24
+langchain-aws==0.2.24
+
+# Add langgraph for modern conversation management (latest compatible version)
+langgraph==0.4.8
+
+# FastMCP - Native FastMCP Client
+fastmcp==2.6.1
+
+# AWS SDK - LATEST
+boto3==1.38.29
+botocore==1.38.29
+
+# Enhanced async support
+aiohttp==3.12.9
+
+# Core dependencies
+pydantic==2.11.5   
+
+# Optional: For advanced MCP features (uncomment if needed)
+httpx>=0.28.1  # Latest HTTP client for MCP servers
+# websockets>=13.1  # Latest WebSocket support
+tenacity>=9.1.2  # Latest retry logic
+
+# Development only (remove in production)
+# pytest>=8.3.4
+# pytest-asyncio>=0.24.0
