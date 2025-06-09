@@ -31,7 +31,9 @@ aws ecr get-login-password --region $REGION | docker login --username AWS --pass
 
 # Step 3: Build the Docker image
 echo "Building Docker image..."
-docker build --platform linux/amd64 -t $REPOSITORY_NAME:$IMAGE_TAG .
+# Ensure buildx is available and create/use a builder that supports multi-platform builds
+docker buildx create --name multiplatform --use --driver docker-container 2>/dev/null || docker buildx use multiplatform
+docker buildx build --platform linux/amd64 --load -t $REPOSITORY_NAME:$IMAGE_TAG .
 
 # Step 4: Tag the image for ECR
 echo "Tagging image for ECR..."
@@ -62,7 +64,7 @@ else
         --code ImageUri=$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPOSITORY_NAME:$IMAGE_TAG \
         --role arn:aws:iam::$ACCOUNT_ID:role/cdw-explore-advbot-lambda-role \
         --timeout 90 \
-        --memory-size 512 \
+        --memory-size 1024 \
         --architectures x86_64 \
         --description "CDW Explore Advisory Bot Template using LangChain and Bedrock (Container)" \
         --region $REGION

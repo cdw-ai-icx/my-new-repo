@@ -1,0 +1,41 @@
+{
+  "messageVersion": "1.0",
+  "invocationSource": "FulfillmentCodeHook",
+  "userId": "test-user-123",
+  "sessionId": "test-session-456",
+  "inputTranscript": "Hi, I need help with my order #12345",
+  "interpretations": [
+    {
+      "intent": {
+        "name": "FallbackIntent",
+        "confirmationState": "None",
+        "state": "InProgress",
+        "slots": {}
+      },
+      "nluConfidence": {
+        "score": 0.85
+      }
+    }
+  ],
+  "responseContentType": "text/plain; charset=utf-8",
+  "sessionState": {
+    "sessionAttributes": {
+      "conversation_history": ""
+    },
+    "intent": {
+      "name": "FallbackIntent",
+      "confirmationState": "None",
+      "state": "InProgress",
+      "slots": {}
+    },
+    "originatingRequestId": "test-originating-request-123"
+  },
+  "inputMode": "Text",
+  "requestAttributes": {},
+  "bot": {
+    "id": "test-bot-id",
+    "name": "CDWChatBot",
+    "version": "DRAFT",
+    "localeId": "en_US"
+  }
+}
