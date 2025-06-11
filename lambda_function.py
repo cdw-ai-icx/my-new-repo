@@ -110,19 +110,29 @@ You have access to Epic healthcare systems through MCP tools in a secure test en
 
 {mcp_context}
 
-WHEN AND HOW TO USE MCP TOOLS:
-- You SHOULD use MCP tools when patients ask for their information (appointments, medications, records, etc.)
-- Patient ID provided: Use tools like get_patient_by_id, search_patients, get_patient_appointments
-- Patient asking about appointments: Use get_patient_appointments or search_appointments
-- Patient asking about medications: Use get_patient_medications
-- Patient asking to find their record: Use search_patients with their details
-- These are test Epic systems - you CAN and SHOULD access patient data when requested
+MCP TOOL USAGE GUIDELINES:
+1. **INTELLIGENT TOOL SELECTION:** Use your judgment to select appropriate MCP tools based on:
+   - User's request (appointments, medications, patient records, etc.)
+   - Parameters provided by the user (patient IDs, names, dates, etc.)
+   - Tool capabilities and parameter requirements shown in the tool descriptions
 
-SECURITY VALIDATION (for actual data access):
-- For patient ID requests: Use the patient ID they provide directly with tools
-- For general searches: Ask for name and date of birth if needed for the specific tool
-- Always use the tools when patient data is requested - don't refuse access
-- DO NOT MAKE UP DATA - always use actual tool results
+2. **WHEN TO USE TOOLS:**
+   - User asks for their medical information → Use relevant patient lookup tools
+   - User provides specific identifiers → Match them to appropriate tool parameters
+   - User requests healthcare data → Select tools that can retrieve that data type
+
+3. **HOW TO USE TOOLS:**
+   - Extract relevant information from user's message (IDs, names, dates)
+   - Match user-provided data to tool parameter requirements
+   - Call appropriate tools with the extracted parameters
+   - Present actual tool results to the user
+
+4. **CRITICAL - DATA INTEGRITY:**
+   - ONLY present data returned from actual tool calls
+   - NEVER invent or make up patient information
+   - If tools fail: "I'm having trouble accessing the system right now"
+   - If no relevant tools available: "I don't have access to that information right now"
+   - Always use real data from MCP tool responses
 
 Use the conversation history to provide contextual, caring responses.
 
@@ -186,9 +196,9 @@ Respond as Medley - be friendly, clear, and concise. When patients ask for their
         }
 
     def _handle_tool_execution(self, history_str: str, state: ConversationState) -> str:
-        """Handle tool execution with proper tool calling loop"""
+        """Handle tool execution with proper FastMCP and LangGraph integration"""
         import asyncio
-        from langchain_core.messages import ToolMessage
+        from langchain_core.messages import ToolMessage, HumanMessage, SystemMessage
         
         # Check if MCP tools are available
         if not (state['mcp_context'] and "MCP TOOLS AVAILABLE" in state['mcp_context']):
@@ -211,7 +221,7 @@ Respond as Medley - be friendly, clear, and concise. When patients ask for their
             available_tools = loop.run_until_complete(get_available_tools())
             
             if not available_tools:
-                # Fallback to regular chain if no tools available
+                logger.warning("No MCP tools available - falling back to regular chain")
                 chain = (
                     {
                         "history": lambda _: history_str,
@@ -224,96 +234,124 @@ Respond as Medley - be friendly, clear, and concise. When patients ask for their
                 )
                 return chain.invoke({})
             
-            # Create tool functions for LangChain using proper schema
+            # Create LangChain-compatible tools from MCP tools
             from langchain_core.tools import StructuredTool
-            from pydantic import BaseModel, Field
+            from pydantic import BaseModel, create_model
             
-            # Create LangChain tools from MCP tools with proper schemas
             langchain_tools = []
             for tool in available_tools:
-                # Create a dynamic schema for each tool
-                def create_tool_schema(tool_name: str):
-                    # Create a flexible schema that accepts any arguments
-                    class DynamicToolInput(BaseModel):
-                        # This will allow any field names
+                logger.info(f"Creating LangChain tool for MCP tool: {tool['name']}")
+                
+                # Create dynamic Pydantic model for tool arguments
+                # Use the input_schema if available, otherwise create flexible schema
+                input_schema = tool.get('input_schema', {})
+                properties = input_schema.get('properties', {})
+                
+                if properties:
+                    # Create typed model from schema
+                    field_definitions = {}
+                    for prop_name, prop_def in properties.items():
+                        prop_type = str  # Default to string, could be enhanced
+                        if prop_def.get('type') == 'integer':
+                            prop_type = int
+                        elif prop_def.get('type') == 'boolean':
+                            prop_type = bool
+                        
+                        field_definitions[prop_name] = (prop_type, ...)
+                    
+                    ToolArgsModel = create_model(
+                        f"{tool['name']}Args",
+                        **field_definitions
+                    )
+                else:
+                    # Flexible model for tools without schema
+                    class ToolArgsModel(BaseModel):
                         class Config:
                             extra = "allow"
-                    
-                    return DynamicToolInput
                 
+                # Create async wrapper function for MCP tool
                 def create_mcp_tool_wrapper(tool_name: str):
                     def mcp_tool_func(**kwargs):
-                        loop = asyncio.get_event_loop()
-                        # Pass arguments directly without wrapping
-                        result = loop.run_until_complete(call_mcp_tool(tool_name, kwargs))
-                        if result.get("success"):
-                            return "\n".join(result.get("result", []))
-                        else:
-                            return f"Error: {result.get('error', 'Unknown error')}"
+                        try:
+                            logger.info(f"🔧 Executing MCP tool: {tool_name} with args: {kwargs}")
+                            loop = asyncio.get_event_loop()
+                            result = loop.run_until_complete(call_mcp_tool(tool_name, kwargs))
+                            
+                            if result.get("success"):
+                                tool_result = "\n".join(result.get("result", []))
+                                logger.info(f"✅ MCP tool {tool_name} succeeded: {tool_result[:100]}...")
+                                return tool_result
+                            else:
+                                error_msg = f"MCP tool {tool_name} failed: {result.get('error', 'Unknown error')}"
+                                logger.error(error_msg)
+                                return error_msg
+                        except Exception as e:
+                            error_msg = f"Error executing MCP tool {tool_name}: {str(e)}"
+                            logger.error(error_msg)
+                            return error_msg
                     return mcp_tool_func
                 
-                tool_func = create_mcp_tool_wrapper(tool["name"])
-                tool_schema = create_tool_schema(tool["name"])
-                
+                # Create LangChain StructuredTool
                 lc_tool = StructuredTool(
                     name=tool["name"],
                     description=tool.get("description", f"MCP tool: {tool['name']}"),
-                    func=tool_func,
-                    args_schema=tool_schema
+                    func=create_mcp_tool_wrapper(tool["name"]),
+                    args_schema=ToolArgsModel
                 )
                 langchain_tools.append(lc_tool)
             
             # Bind tools to LLM
             llm_with_tools = self.llm.bind_tools(langchain_tools)
-            logger.info(f"Bound {len(langchain_tools)} MCP tools to LLM")
+            logger.info(f"✅ Bound {len(langchain_tools)} MCP tools to LLM")
             
-            # Initial prompt with tools
+            # Create initial messages for tool execution
+            system_prompt = self.prompt_template.format(
+                history=history_str,
+                input=state['current_input'],
+                mcp_context=state['mcp_context']
+            )
+            
             messages = [
-                {"role": "system", "content": self.prompt_template.format(
-                    history=history_str,
-                    input=state['current_input'],
-                    mcp_context=state['mcp_context']
-                )},
-                {"role": "user", "content": state['current_input']}
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=state['current_input'])
             ]
             
-            # Tool execution loop - reduced iterations to prevent timeout
-            max_iterations = 2
-            for i in range(max_iterations):
+            # Tool execution loop with LangGraph-style approach
+            max_iterations = 3
+            for iteration in range(max_iterations):
+                logger.info(f"🔄 Tool execution iteration {iteration + 1}/{max_iterations}")
+                
                 # Get response from LLM
                 response = llm_with_tools.invoke(messages)
+                messages.append(response)
                 
                 # Check if LLM wants to use tools
                 if hasattr(response, 'tool_calls') and response.tool_calls:
-                    logger.info(f"LLM requested {len(response.tool_calls)} tool calls")
-                    messages.append(response)
+                    logger.info(f"🛠️ LLM requested {len(response.tool_calls)} tool calls")
                     
                     # Execute each tool call
                     for tool_call in response.tool_calls:
                         tool_name = tool_call['name']
                         tool_args = tool_call.get('args', {})
-                        tool_id = tool_call.get('id', f"call_{i}_{tool_name}")
+                        tool_id = tool_call.get('id', f"call_{iteration}_{tool_name}")
                         
-                        logger.info(f"Executing tool: {tool_name} with args: {tool_args}")
+                        logger.info(f"🔧 Executing tool: {tool_name} with args: {tool_args}")
                         
-                        # Find and execute the tool directly via MCP
+                        # Execute the tool directly via our MCP integration
                         try:
-                            # Check if arguments are wrapped with 'kwargs' and unwrap if needed
-                            if 'kwargs' in tool_args and len(tool_args) == 1:
-                                # Unwrap the arguments
-                                actual_args = tool_args['kwargs']
-                                logger.info(f"Unwrapping kwargs for tool {tool_name}: {actual_args}")
-                            else:
-                                actual_args = tool_args
+                            result = asyncio.get_event_loop().run_until_complete(
+                                call_mcp_tool(tool_name, tool_args)
+                            )
                             
-                            # Use the MCP call directly
-                            result = asyncio.get_event_loop().run_until_complete(call_mcp_tool(tool_name, actual_args))
                             if result.get("success"):
                                 tool_result = "\n".join(result.get("result", []))
+                                logger.info(f"✅ Tool {tool_name} executed successfully")
                             else:
                                 tool_result = f"MCP Error: {result.get('error', 'Unknown error')}"
+                                logger.error(f"❌ Tool {tool_name} failed: {result.get('error')}")
                         except Exception as e:
-                            tool_result = f"Error executing tool: {str(e)}"
+                            tool_result = f"Error executing tool {tool_name}: {str(e)}"
+                            logger.error(f"❌ Exception in tool {tool_name}: {str(e)}")
                         
                         # Add tool result to messages
                         messages.append(ToolMessage(
@@ -321,23 +359,31 @@ Respond as Medley - be friendly, clear, and concise. When patients ask for their
                             tool_call_id=tool_id
                         ))
                     
-                    # Continue the loop to get final response
+                    # Continue loop to get final response
                     continue
                 else:
                     # No tool calls, return the response
-                    return response.content if hasattr(response, 'content') else str(response)
+                    final_response = response.content if hasattr(response, 'content') else str(response)
+                    logger.info(f"✅ Final response generated (no more tool calls)")
+                    return final_response
             
             # If we hit max iterations, return the last response
-            return response.content if hasattr(response, 'content') else str(response)
+            final_response = response.content if hasattr(response, 'content') else str(response)
+            logger.warning(f"⚠️ Hit max iterations ({max_iterations}), returning last response")
+            return final_response
             
         except Exception as e:
-            logger.warning(f"Tool execution error: {str(e)}")
-            # Fallback to regular chain
+            logger.error(f"❌ Tool execution error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+            # Fallback to regular chain with error context
+            error_context = f"MCP tools encountered an error: {str(e)}. Please answer without using external tools."
             chain = (
                 {
                     "history": lambda _: history_str,
                     "input": lambda _: state['current_input'],
-                    "mcp_context": lambda _: state['mcp_context']
+                    "mcp_context": lambda _: error_context
                 }
                 | self.prompt_template
                 | self.llm

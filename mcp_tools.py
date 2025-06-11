@@ -15,37 +15,75 @@ MCP_SERVER_URL = os.environ.get('MCP_SERVER_URL', 'https://epicmcp.cdwaws.com/mc
 
 async def get_available_tools(server_url: str = None) -> List[Dict[str, Any]]:
     """
-    Get all available tools from the MCP server using Streamable HTTP transport
+    Get all available tools from the MCP server using FastMCP client
     Returns list of tool objects with name, description, etc.
     """
     url = server_url or MCP_SERVER_URL
     
     try:
-        # FastMCP auto-detects Streamable HTTP transport from http/https URLs
-        logger.info(f"🌐 Connecting to MCP server via Streamable HTTP: {url}")
+        logger.info(f"🌐 Connecting to MCP server: {url}")
+        
+        # Use FastMCP Client with proper async context
         async with Client(url) as client:
+            # Get tools using FastMCP list_tools method
             tools = await client.list_tools()
-            logger.info(f"✅ Retrieved {len(tools)} tools via Streamable HTTP")
-            return [{"name": tool.name, "description": getattr(tool, 'description', '')} for tool in tools]
+            logger.info(f"✅ Retrieved {len(tools)} tools from MCP server")
+            
+            # Convert to detailed format for LLM understanding
+            tool_list = []
+            for tool in tools:
+                # Extract comprehensive tool information
+                tool_dict = {
+                    "name": tool.name,
+                    "description": getattr(tool, 'description', f"Tool: {tool.name}"),
+                    "input_schema": getattr(tool, 'inputSchema', {})
+                }
+                
+                # Enhance description with parameter information for LLM
+                schema = tool_dict["input_schema"]
+                if schema and "properties" in schema:
+                    param_info = []
+                    for param_name, param_def in schema["properties"].items():
+                        param_type = param_def.get("type", "string")
+                        param_desc = param_def.get("description", "")
+                        param_info.append(f"{param_name} ({param_type}): {param_desc}")
+                    
+                    if param_info:
+                        tool_dict["description"] += f" Parameters: {'; '.join(param_info)}"
+                
+                tool_list.append(tool_dict)
+                logger.info(f"📋 Tool: {tool.name}")
+                logger.info(f"    Description: {tool_dict['description']}")
+                if schema:
+                    logger.info(f"    Schema: {schema}")
+            
+            return tool_list
             
     except Exception as e:
-        logger.error(f"❌ Failed to get tools from {url} via Streamable HTTP: {str(e)}")
+        logger.error(f"❌ Failed to get tools from {url}: {str(e)}")
         return []
 
 async def call_mcp_tool(tool_name: str, arguments: Dict[str, Any], server_url: str = None) -> Dict[str, Any]:
     """
-    Call any MCP tool with given arguments using Streamable HTTP transport
+    Call any MCP tool with given arguments using FastMCP client
     Returns standardized response format
     """
     url = server_url or MCP_SERVER_URL
     
     try:
-        # FastMCP auto-detects Streamable HTTP transport from http/https URLs
-        logger.info(f"🔧 Calling tool '{tool_name}' via Streamable HTTP: {url}")
+        # Fix validation for epic_headers parameter
+        if 'epic_headers' in arguments and isinstance(arguments['epic_headers'], str):
+            if arguments['epic_headers'] == '' or arguments['epic_headers'] == '{}':
+                arguments['epic_headers'] = {}
+        
+        logger.info(f"🔧 Calling tool '{tool_name}' with args: {arguments}")
+        
+        # Use FastMCP Client with proper async context
         async with Client(url) as client:
+            # Call tool using FastMCP call_tool method
             result = await client.call_tool(tool_name, arguments)
             
-            # Extract content from result
+            # Extract content from FastMCP result
             content = []
             for item in result:
                 if hasattr(item, 'text'):
@@ -55,46 +93,37 @@ async def call_mcp_tool(tool_name: str, arguments: Dict[str, Any], server_url: s
                 else:
                     content.append(str(item))
             
-            logger.info(f"✅ Tool '{tool_name}' executed successfully via Streamable HTTP")
+            logger.info(f"✅ Tool '{tool_name}' executed successfully. Result: {content[:100]}...")
             return {
                 "success": True,
                 "tool": tool_name,
                 "result": content,
-                "arguments": arguments,
-                "transport": "streamable-http"
+                "arguments": arguments
             }
             
     except Exception as e:
-        logger.error(f"❌ Tool '{tool_name}' failed via Streamable HTTP: {str(e)}")
+        logger.error(f"❌ Tool '{tool_name}' failed: {str(e)}")
         return {
             "success": False,
             "tool": tool_name,
             "error": str(e),
-            "arguments": arguments,
-            "transport": "streamable-http"
+            "arguments": arguments
         }
 
 async def analyze_query_for_tools(query: str, available_tools: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Analyze user query to determine which tools might be useful
-    This is where you can add intelligence to automatically select tools
+    Simple analysis - let the LLM decide when to use tools based on tool schemas and user intent
+    No hardcoded patterns or keyword detection
     """
-    query_lower = query.lower()
-    suggested_tools = []
+    # Always make tools available - let LLM decide based on user context and tool capabilities
+    should_use_mcp = len(available_tools) > 0
     
-    # Simple keyword matching - you can make this more sophisticated
-    for tool in available_tools:
-        tool_name = tool["name"].lower()
-        tool_desc = tool.get("description", "").lower()
-        
-        # Check if query keywords match tool name or description
-        if any(word in tool_name or word in tool_desc for word in query_lower.split()):
-            suggested_tools.append(tool)
+    logger.info(f"📋 Making {len(available_tools)} MCP tools available to LLM for intelligent selection")
     
     return {
-        "suggested_tools": suggested_tools,
-        "should_use_mcp": len(suggested_tools) > 0,
-        "analysis": f"Found {len(suggested_tools)} relevant tools for query"
+        "suggested_tools": available_tools,  # Provide all tools, let LLM choose
+        "should_use_mcp": should_use_mcp,
+        "analysis": f"Available tools: {len(available_tools)} - LLM will decide usage based on user intent"
     }
 
 async def get_mcp_tools_context(query: str, server_url: str = None) -> Dict[str, Any]:
@@ -115,46 +144,38 @@ async def get_mcp_tools_context(query: str, server_url: str = None) -> Dict[str,
                 "results": {"error": "No tools available"}
             }
         
-        # Analyze query to see if we should use MCP tools
+        # Analyze query - simplified approach
         analysis = await analyze_query_for_tools(query, available_tools)
         
         if not analysis["should_use_mcp"]:
-            # No relevant tools found, but still provide context about available tools
-            tools_list = [tool["name"] for tool in available_tools]
-            context = f"I have access to {len(available_tools)} MCP tools: {', '.join(tools_list)}. "
-            context += "Let me know if you need help with any specific tasks that these tools might assist with."
-            
+            # No tools available
             return {
-                "context": context,
+                "context": "MCP tools are not available right now.",
                 "used_mcp": False,
-                "results": {
-                    "available_tools": tools_list,
-                    "analysis": analysis["analysis"]
-                }
+                "results": {"error": "No tools available"}
             }
         
-        # Build context with available tools and suggestions
+        # Build simple, clear context for LLM
         tools_list = [tool["name"] for tool in available_tools]
-        suggested_tools = [tool["name"] for tool in analysis["suggested_tools"]]
         
-        context = f"🔧 MCP TOOLS AVAILABLE (Streamable HTTP)\n\n"
+        # Create tool descriptions for LLM understanding
+        tool_descriptions = []
+        for tool in available_tools:
+            tool_descriptions.append(f"- {tool['name']}: {tool['description']}")
+        
+        context = f"🔧 MCP TOOLS AVAILABLE\n\n"
         context += f"Connected to MCP server: {url}\n"
-        context += f"Transport: Streamable HTTP (single endpoint)\n"
-        context += f"Available tools: {len(available_tools)} | Suggested: {len(suggested_tools)}\n\n"
-        context += f"All Tools: {', '.join(tools_list)}\n"
-        if suggested_tools:
-            context += f"Suggested for your query: {', '.join(suggested_tools)}\n\n"
-        context += f"I can use these tools to help answer your question. What specific information do you need?"
+        context += f"Available tools ({len(available_tools)}):\n"
+        context += "\n".join(tool_descriptions)
+        context += f"\n\nThese tools are ready to use. Select appropriate tools based on the user's request and the tool parameters shown above."
         
         return {
             "context": context,
             "used_mcp": True,
             "results": {
                 "available_tools": tools_list,
-                "suggested_tools": suggested_tools,
                 "analysis": analysis["analysis"],
-                "server_url": url,
-                "transport": "streamable-http"
+                "server_url": url
             }
         }
         

@@ -1,0 +1,290 @@
+[
+  {
+    "test_case": {
+      "id": "general-info",
+      "description": "General information query (shouldn't use MCP)",
+      "message": "What are the latest trends in cloud computing for healthcare?",
+      "expected_behavior": "Should answer about cloud computing without using MCP tools"
+    },
+    "response": {
+      "response": "Hi there! I'm Medley, your patient assistant here at CDW Healthcare. I'm designed to help you with your personal healthcare needs like appointments, medications, and connecting with your care team.\n\nFor questions about industry trends like cloud computing in healthcare, I'd recommend reaching out to our technology specialists or checking CDW's healthcare technology resources, as my focus is on helping patients with their individual healthcare information and needs.\n\nIs there anything I can help you with regarding your appointments, medications, or other healthcare services? I have access to your medical records and can assist with those types of questions! \ud83d\ude0a",
+      "session_id": "batch-test-20250610-075023",
+      "bot_name": "Medley - CDW Healthcare Assistant",
+      "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "message_count": 1,
+      "status": "success",
+      "mcp_enabled": true,
+      "used_mcp": true,
+      "mcp_results": {
+        "available_tools": [
+          "add",
+          "echo",
+          "search_patients",
+          "match_patient",
+          "search_appointments",
+          "get_patient_appointments",
+          "search_medication_dispenses",
+          "search_accounts_by_id",
+          "get_patient_complete_profile",
+          "get_patient_medications_detailed"
+        ],
+        "analysis": "Available tools: 10 - LLM will decide usage based on user intent",
+        "server_url": "https://epicmcp.cdwaws.com/mcp/"
+      },
+      "timestamp": "2025-06-10T07:50:30.394122"
+    },
+    "timestamp": "2025-06-10T07:50:30.394124"
+  },
+  {
+    "test_case": {
+      "id": "healthcare-general",
+      "description": "Healthcare-related question (might use MCP)",
+      "message": "Can you help me look up patient information in Epic?",
+      "expected_behavior": "Should explain capabilities and offer to use tools if patient info provided"
+    },
+    "response": {
+      "response": "Absolutely! I can help you look up patient information in our Epic system. I have several tools available to search for and retrieve patient data.\n\nTo get started, I'll need some information from you. Here are the ways I can help you find patient information:\n\n**Patient Search Options:**\n1. **Search by demographics** - I can search using:\n   - Patient's first and last name\n   - Birth date\n   - Gender\n   - Patient identifier (like MRN)\n\n2. **Patient matching** - I can match patients using:\n   - First and last name\n   - Birth date\n   - Phone number (optional)\n   - Email address (optional)\n\n**Once I find a patient, I can also:**\n- Get their complete profile with demographics, appointments, and medications\n- Look up their upcoming or past appointments\n- Review their medication information\n- Search for specific appointment details\n\nWhat information do you have about the patient you'd like to look up? For example:\n- Patient's name?\n- Birth date?\n- Patient ID/MRN?\n- Any other identifying information?\n\nJust let me know what details you have, and I'll help you find the patient information you need! \ud83d\ude0a",
+      "session_id": "batch-test-20250610-075023",
+      "bot_name": "Medley - CDW Healthcare Assistant",
+      "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "message_count": 2,
+      "status": "success",
+      "mcp_enabled": true,
+      "used_mcp": true,
+      "mcp_results": {
+        "available_tools": [
+          "add",
+          "echo",
+          "search_patients",
+          "match_patient",
+          "search_appointments",
+          "get_patient_appointments",
+          "search_medication_dispenses",
+          "search_accounts_by_id",
+          "get_patient_complete_profile",
+          "get_patient_medications_detailed"
+        ],
+        "analysis": "Available tools: 10 - LLM will decide usage based on user intent",
+        "server_url": "https://epicmcp.cdwaws.com/mcp/"
+      },
+      "timestamp": "2025-06-10T07:50:39.515779"
+    },
+    "timestamp": "2025-06-10T07:50:39.515785"
+  },
+  {
+    "test_case": {
+      "id": "patient-lookup",
+      "description": "Direct patient lookup (should use MCP tools)",
+      "message": "Find patient with ID e0w0LEDCYtfckT6N.CkJKCw3",
+      "expected_behavior": "Should use patient lookup tool with provided ID"
+    },
+    "response": {
+      "response": "I found the patient with ID **e0w0LEDCYtfckT6N.CkJKCw3**! Here's their complete profile:\n\n## Patient Demographics\n- **Name:** Argonaut, Jason\n- **Date of Birth:** February 20, 1987 (Age: 37)\n- **Gender:** Male\n- **Address:** 1979 Milky Way, Verona, WI 53593\n- **Phone:** 608-271-9000\n- **Email:** jason.argonaut@epic.com\n- **MRN:** E4202\n\n## Recent Appointments\n**Upcoming:**\n- **December 19, 2024 at 9:00 AM** - Office Visit with Dr. Susan Clark (Internal Medicine)\n  - Status: Booked\n  - Location: Internal Medicine, Verona\n\n**Past Appointments:**\n- **December 17, 2024 at 9:00 AM** - Office Visit with Dr. Susan Clark\n  - Status: Fulfilled\n  - Location: Internal Medicine, Verona\n\n## Current Medications\n1. **Amoxicillin 250 mg capsule**\n   - Take 1 capsule by mouth 3 times daily\n   - Last dispensed: December 17, 2024\n   - Quantity: 21 capsules\n\n2. **Tylenol 325 mg tablet**\n   - Take 1-2 tablets by mouth every 4-6 hours as needed for pain\n   - Last dispensed: December 17, 2024\n   - Quantity: 50 tablets\n\nThe patient appears to have regular care with Dr. Susan Clark in Internal Medicine and was recently prescribed antibiotics and pain medication. Is there anything specific about this patient's information you'd like me to look into further? \ud83d\ude0a",
+      "session_id": "batch-test-20250610-075023",
+      "bot_name": "Medley - CDW Healthcare Assistant",
+      "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "message_count": 3,
+      "status": "success",
+      "mcp_enabled": true,
+      "used_mcp": true,
+      "mcp_results": {
+        "available_tools": [
+          "add",
+          "echo",
+          "search_patients",
+          "match_patient",
+          "search_appointments",
+          "get_patient_appointments",
+          "search_medication_dispenses",
+          "search_accounts_by_id",
+          "get_patient_complete_profile",
+          "get_patient_medications_detailed"
+        ],
+        "analysis": "Available tools: 10 - LLM will decide usage based on user intent",
+        "server_url": "https://epicmcp.cdwaws.com/mcp/"
+      },
+      "timestamp": "2025-06-10T07:51:02.972091"
+    },
+    "timestamp": "2025-06-10T07:51:02.972097"
+  },
+  {
+    "test_case": {
+      "id": "appointment-info",
+      "description": "Request for appointment information",
+      "message": "When is my next appointment?",
+      "expected_behavior": "Should explain need for patient ID to lookup appointments"
+    },
+    "response": {
+      "response": "I'd be happy to help you find your next appointment! To look up your appointment information in our system, I'll need to identify you first.\n\nCould you please provide me with one of the following:\n\n**Option 1 - Your patient ID/MRN** (if you know it)\n\n**Option 2 - Your personal information for patient matching:**\n- Your full name (first and last)\n- Your date of birth\n- Your phone number (optional)\n- Your email address (optional)\n\nOnce I can identify you in our system, I'll be able to pull up your upcoming appointments and let you know when your next one is scheduled! \ud83d\ude0a",
+      "session_id": "batch-test-20250610-075023",
+      "bot_name": "Medley - CDW Healthcare Assistant",
+      "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "message_count": 4,
+      "status": "success",
+      "mcp_enabled": true,
+      "used_mcp": true,
+      "mcp_results": {
+        "available_tools": [
+          "add",
+          "echo",
+          "search_patients",
+          "match_patient",
+          "search_appointments",
+          "get_patient_appointments",
+          "search_medication_dispenses",
+          "search_accounts_by_id",
+          "get_patient_complete_profile",
+          "get_patient_medications_detailed"
+        ],
+        "analysis": "Available tools: 10 - LLM will decide usage based on user intent",
+        "server_url": "https://epicmcp.cdwaws.com/mcp/"
+      },
+      "timestamp": "2025-06-10T07:51:09.175426"
+    },
+    "timestamp": "2025-06-10T07:51:09.175434"
+  },
+  {
+    "test_case": {
+      "id": "error-handling",
+      "description": "Test error handling with invalid request",
+      "message": "Find patient with ID invalid-patient-id-12345",
+      "expected_behavior": "Should attempt lookup but handle error gracefully"
+    },
+    "response": {
+      "response": "I'm having trouble accessing the system right now with that patient ID. The ID \"invalid-patient-id-12345\" doesn't appear to be a valid patient identifier in our Epic system.\n\nCould you please double-check the patient ID? Epic patient IDs typically have a different format (like the example we saw earlier: \"e0w0LEDCYtfckT6N.CkJKCw3\").\n\nAlternatively, if you'd like to search for a patient, I can help you find them using:\n- Patient's first and last name\n- Date of birth\n- Medical record number (MRN)\n- Phone number or email\n\nJust let me know the correct patient information, and I'll be happy to look them up for you! \ud83d\ude0a",
+      "session_id": "batch-test-20250610-075023",
+      "bot_name": "Medley - CDW Healthcare Assistant",
+      "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "message_count": 5,
+      "status": "success",
+      "mcp_enabled": true,
+      "used_mcp": true,
+      "mcp_results": {
+        "available_tools": [
+          "add",
+          "echo",
+          "search_patients",
+          "match_patient",
+          "search_appointments",
+          "get_patient_appointments",
+          "search_medication_dispenses",
+          "search_accounts_by_id",
+          "get_patient_complete_profile",
+          "get_patient_medications_detailed"
+        ],
+        "analysis": "Available tools: 10 - LLM will decide usage based on user intent",
+        "server_url": "https://epicmcp.cdwaws.com/mcp/"
+      },
+      "timestamp": "2025-06-10T07:51:29.212182"
+    },
+    "timestamp": "2025-06-10T07:51:29.212185"
+  },
+  {
+    "test_case": {
+      "id": "multi-step-1",
+      "description": "First step of multi-step interaction",
+      "message": "I need to know my medication schedule",
+      "expected_behavior": "Should ask for patient identification information"
+    },
+    "response": {
+      "response": "I'd be happy to help you find your medication schedule! To look up your current medications and dosing information in our system, I'll need to identify you first.\n\nCould you please provide me with one of the following:\n\n**Option 1 - Your patient ID** (if you know it)\n\n**Option 2 - Your personal information for patient matching:**\n- Your full name (first and last)\n- Your date of birth\n- Your phone number (optional)\n- Your email address (optional)\n\nOnce I can identify you in our system, I'll be able to pull up your current medications with detailed scheduling information, including:\n- What medications you're taking\n- Dosage instructions\n- How often to take them\n- When they were last dispensed\n\nJust let me know how you'd like to proceed! \ud83d\ude0a",
+      "session_id": "batch-test-20250610-075023",
+      "bot_name": "Medley - CDW Healthcare Assistant",
+      "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "message_count": 6,
+      "status": "success",
+      "mcp_enabled": true,
+      "used_mcp": true,
+      "mcp_results": {
+        "available_tools": [
+          "add",
+          "echo",
+          "search_patients",
+          "match_patient",
+          "search_appointments",
+          "get_patient_appointments",
+          "search_medication_dispenses",
+          "search_accounts_by_id",
+          "get_patient_complete_profile",
+          "get_patient_medications_detailed"
+        ],
+        "analysis": "Available tools: 10 - LLM will decide usage based on user intent",
+        "server_url": "https://epicmcp.cdwaws.com/mcp/"
+      },
+      "timestamp": "2025-06-10T07:51:35.952355"
+    },
+    "timestamp": "2025-06-10T07:51:35.952360"
+  },
+  {
+    "test_case": {
+      "id": "multi-step-2",
+      "description": "Second step of multi-step interaction (follows medication schedule)",
+      "message": "My patient ID is e0w0LEDCYtfckT6N.CkJKCw3",
+      "expected_behavior": "Should use ID to lookup medications after previous query"
+    },
+    "response": {
+      "response": "I'm having trouble accessing the medication system right now. Let me try getting your complete patient profile which should include your current medications:",
+      "session_id": "batch-test-20250610-075023",
+      "bot_name": "Medley - CDW Healthcare Assistant",
+      "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "message_count": 7,
+      "status": "success",
+      "mcp_enabled": true,
+      "used_mcp": true,
+      "mcp_results": {
+        "available_tools": [
+          "add",
+          "echo",
+          "search_patients",
+          "match_patient",
+          "search_appointments",
+          "get_patient_appointments",
+          "search_medication_dispenses",
+          "search_accounts_by_id",
+          "get_patient_complete_profile",
+          "get_patient_medications_detailed"
+        ],
+        "analysis": "Available tools: 10 - LLM will decide usage based on user intent",
+        "server_url": "https://epicmcp.cdwaws.com/mcp/"
+      },
+      "timestamp": "2025-06-10T07:51:54.387635"
+    },
+    "timestamp": "2025-06-10T07:51:54.387642"
+  },
+  {
+    "test_case": {
+      "id": "tool-chaining",
+      "description": "Query that should trigger multiple tool calls in sequence",
+      "message": "Find patient e0w0LEDCYtfckT6N.CkJKCw3 and tell me about their recent lab results",
+      "expected_behavior": "Should use patient lookup tool first, then lab results tool"
+    },
+    "response": {
+      "response": "I'm having trouble accessing the system right now to retrieve the patient information and lab results. The system appears to be experiencing some technical difficulties.\n\nHowever, I should mention that the tools I have available are focused on patient demographics, appointments, and medication information. Lab results typically require specialized laboratory system access that may not be available through my current tools.\n\nFor recent lab results, I'd recommend:\n1. **Contacting your healthcare provider directly** - they can access your complete lab history\n2. **Checking your patient portal** - most lab results are posted there within 24-48 hours\n3. **Calling the lab department** - they can provide detailed results and explanations\n\nIs there anything else I can help you with regarding appointments or medications once the system is back up? \ud83d\ude0a",
+      "session_id": "batch-test-20250610-075023",
+      "bot_name": "Medley - CDW Healthcare Assistant",
+      "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "message_count": 8,
+      "status": "success",
+      "mcp_enabled": true,
+      "used_mcp": true,
+      "mcp_results": {
+        "available_tools": [
+          "add",
+          "echo",
+          "search_patients",
+          "match_patient",
+          "search_appointments",
+          "get_patient_appointments",
+          "search_medication_dispenses",
+          "search_accounts_by_id",
+          "get_patient_complete_profile",
+          "get_patient_medications_detailed"
+        ],
+        "analysis": "Available tools: 10 - LLM will decide usage based on user intent",
+        "server_url": "https://epicmcp.cdwaws.com/mcp/"
+      },
+      "timestamp": "2025-06-10T07:52:12.003716"
+    },
+    "timestamp": "2025-06-10T07:52:12.003726"
+  }
+]

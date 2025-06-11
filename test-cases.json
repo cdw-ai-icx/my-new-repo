@@ -1,0 +1,50 @@
+[
+  {
+    "id": "general-info",
+    "description": "General information query (shouldn't use MCP)",
+    "message": "What are the latest trends in cloud computing for healthcare?",
+    "expected_behavior": "Should answer about cloud computing without using MCP tools"
+  },
+  {
+    "id": "healthcare-general",
+    "description": "Healthcare-related question (might use MCP)",
+    "message": "Can you help me look up patient information in Epic?",
+    "expected_behavior": "Should explain capabilities and offer to use tools if patient info provided"
+  },
+  {
+    "id": "patient-lookup",
+    "description": "Direct patient lookup (should use MCP tools)",
+    "message": "Find patient with ID e0w0LEDCYtfckT6N.CkJKCw3",
+    "expected_behavior": "Should use patient lookup tool with provided ID"
+  },
+  {
+    "id": "appointment-info",
+    "description": "Request for appointment information",
+    "message": "When is my next appointment?",
+    "expected_behavior": "Should explain need for patient ID to lookup appointments"
+  },
+  {
+    "id": "error-handling",
+    "description": "Test error handling with invalid request",
+    "message": "Find patient with ID invalid-patient-id-12345",
+    "expected_behavior": "Should attempt lookup but handle error gracefully"
+  },
+  {
+    "id": "multi-step-1",
+    "description": "First step of multi-step interaction",
+    "message": "I need to know my medication schedule",
+    "expected_behavior": "Should ask for patient identification information"
+  },
+  {
+    "id": "multi-step-2",
+    "description": "Second step of multi-step interaction (follows medication schedule)",
+    "message": "My patient ID is e0w0LEDCYtfckT6N.CkJKCw3",
+    "expected_behavior": "Should use ID to lookup medications after previous query"
+  },
+  {
+    "id": "tool-chaining",
+    "description": "Query that should trigger multiple tool calls in sequence",
+    "message": "Find patient e0w0LEDCYtfckT6N.CkJKCw3 and tell me about their recent lab results",
+    "expected_behavior": "Should use patient lookup tool first, then lab results tool"
+  }
+]
